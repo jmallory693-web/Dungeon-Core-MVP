@@ -1,19 +1,21 @@
 import {
   CLAIM_COST,
-  MANA_PER_TURN,
   type DungeonState,
   type DungeonTile,
   type ResourceState,
+  type TileType,
 } from "./dungeonTypes";
 import { getTileAt } from "./dungeonGeneration";
+import { applyBonus, applyCost, canAfford } from "./resourceUtils";
 
 export type ClaimResult =
   | { ok: true; dungeon: DungeonState; message: string }
   | { ok: false; reason: string };
 
-function hasResources(resources: ResourceState): boolean {
-  return resources.mana >= CLAIM_COST.mana && resources.stone >= CLAIM_COST.stone;
-}
+type TileClaimReward = {
+  bonus: Partial<ResourceState>;
+  log: string;
+};
 
 function isAdjacentToClaimed(dungeon: DungeonState, tile: DungeonTile): boolean {
   const neighbors = [
@@ -27,6 +29,40 @@ function isAdjacentToClaimed(dungeon: DungeonState, tile: DungeonTile): boolean 
     const neighbor = getTileAt(dungeon, pos.x, pos.y);
     return neighbor?.status === "claimed";
   });
+}
+
+function getTileClaimReward(tileType: TileType): TileClaimReward | null {
+  switch (tileType) {
+    case "stone":
+      return null;
+    case "softEarth":
+      return {
+        bonus: { stone: 3 },
+        log: "The core spreads easily through soft earth.",
+      };
+    case "manaVein":
+      return {
+        bonus: { mana: 25 },
+        log: "A mana vein pulses beneath the stone. The core drinks deeply.",
+      };
+    case "mushroomCave":
+      return {
+        bonus: { food: 10 },
+        log: "Pale mushrooms bloom in the damp dark.",
+      };
+    case "boneDeposit":
+      return {
+        bonus: { essence: 10 },
+        log: "Ancient bones crumble into usable essence.",
+      };
+    case "undergroundPool":
+      return {
+        bonus: { mana: 5, food: 5 },
+        log: "Cold underground water gathers around the core's roots.",
+      };
+    default:
+      return null;
+  }
 }
 
 export function canClaimTile(
@@ -49,7 +85,7 @@ export function canClaimTile(
     return { canClaim: false, reason: "Must be adjacent to a claimed tile." };
   }
 
-  if (!hasResources(dungeon.resources)) {
+  if (!canAfford(dungeon.resources, CLAIM_COST)) {
     return {
       canClaim: false,
       reason: `Need ${CLAIM_COST.mana} mana and ${CLAIM_COST.stone} stone.`,
@@ -70,34 +106,44 @@ export function claimTile(dungeon: DungeonState, tileId: string): ClaimResult {
     return { ok: false, reason: eligibility.reason ?? "Cannot claim tile." };
   }
 
-  const nextTurn = dungeon.turn + 1;
-  const updatedResources: ResourceState = {
-    mana:
-      dungeon.resources.mana -
-      CLAIM_COST.mana +
-      MANA_PER_TURN,
-    stone: dungeon.resources.stone - CLAIM_COST.stone,
-  };
+  let resources = applyCost(dungeon.resources, CLAIM_COST);
 
   const updatedTiles = dungeon.tiles.map((entry) =>
     entry.id === tileId
-      ? { ...entry, status: "claimed" as const, claimedAtTurn: nextTurn }
+      ? {
+          ...entry,
+          status: "claimed" as const,
+          claimedAtPulse: dungeon.pulseCount,
+        }
       : entry,
   );
 
-  const message = `Claimed tile (${tile.x}, ${tile.y}) — ${tile.tileType}. Turn ${nextTurn}.`;
-  const updatedLog = [message, ...dungeon.log].slice(0, 50);
+  const reward = getTileClaimReward(tile.tileType);
+  const logEntries: string[] = [
+    `Claimed tile (${tile.x}, ${tile.y}) — ${tile.tileType}.`,
+  ];
+
+  if (reward) {
+    resources = applyBonus(resources, reward.bonus);
+    logEntries.push(reward.log);
+  }
+
+  const updatedLog = [...logEntries, ...dungeon.log].slice(0, 50);
+  const now = new Date().toISOString();
 
   const updatedDungeon: DungeonState = {
     ...dungeon,
-    turn: nextTurn,
-    resources: updatedResources,
+    resources,
     tiles: updatedTiles,
     log: updatedLog,
-    updatedAt: new Date().toISOString(),
+    updatedAt: now,
   };
 
-  return { ok: true, dungeon: updatedDungeon, message };
+  return {
+    ok: true,
+    dungeon: updatedDungeon,
+    message: logEntries[0],
+  };
 }
 
 export function formatTileStatus(status: DungeonTile["status"]): string {
@@ -136,6 +182,16 @@ export function formatRoomType(roomType: DungeonTile["roomType"]): string {
       return "Core Chamber";
     case "entrance":
       return "Entrance";
+    case "manaSiphon":
+      return "Mana Siphon";
+    case "stoneQuarry":
+      return "Stone Quarry";
+    case "mushroomFarm":
+      return "Mushroom Farm";
+    case "boneShrine":
+      return "Bone Shrine";
+    case "treasureNook":
+      return "Treasure Nook";
     default:
       return "Empty";
   }

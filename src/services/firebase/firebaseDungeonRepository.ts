@@ -4,6 +4,11 @@ import {
   setDoc,
 } from "firebase/firestore";
 import { createInitialDungeon } from "../../features/dungeon/dungeonGeneration";
+import {
+  loadDungeonWithOfflineProgress,
+  normalizeDungeonState,
+  shouldPersistAfterLoad,
+} from "../../features/dungeon/dungeonMigration";
 import type { DungeonState } from "../../features/dungeon/dungeonTypes";
 import type { DungeonRepository } from "../dungeon/dungeonRepository";
 import { getFirebaseDb } from "./firebaseApp";
@@ -21,7 +26,18 @@ export function createFirebaseDungeonRepository(ownerUid: string): DungeonReposi
       const snapshot = await getDoc(ref);
 
       if (snapshot.exists()) {
-        return snapshot.data() as DungeonState;
+        const raw = snapshot.data();
+        const normalized = normalizeDungeonState(raw);
+        const withOffline = loadDungeonWithOfflineProgress(raw);
+        const legacySchema =
+          typeof (raw as DungeonState).schemaVersion !== "number" ||
+          (raw as DungeonState).schemaVersion < normalized.schemaVersion;
+
+        if (shouldPersistAfterLoad(normalized, withOffline) || legacySchema) {
+          await setDoc(ref, withOffline);
+        }
+
+        return withOffline;
       }
 
       const dungeon = createInitialDungeon(ownerUid);

@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { DemoModeBanner } from "../demo/DemoModeBanner";
 import { claimTile } from "./dungeonRules";
-import type { DungeonState } from "./dungeonTypes";
+import type { BuildableRoomType, DungeonState } from "./dungeonTypes";
 import { DungeonGrid } from "./DungeonGrid";
 import { DungeonLog } from "./DungeonLog";
+import { PulseControls } from "./PulseControls";
 import { ResourceBar } from "./ResourceBar";
 import { TileDetailsPanel } from "./TileDetailsPanel";
+import { buildRoom } from "./roomRules";
+import { updatePulsePlayback, type PulsePlaybackUpdate } from "./pulseRules";
+import { useDungeonPulse } from "./useDungeonPulse";
 import { useDungeonSession } from "./useDungeonSession";
-
 export function DungeonPage() {
   const session = useDungeonSession();
   const repository =
@@ -18,9 +21,11 @@ export function DungeonPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [claiming, setClaiming] = useState(false);
+  const [building, setBuilding] = useState(false);
   const [claimError, setClaimError] = useState<string | null>(null);
+  const [buildError, setBuildError] = useState<string | null>(null);
+  const [pulseError, setPulseError] = useState<string | null>(null);
   const [resetting, setResetting] = useState(false);
-
   useEffect(() => {
     if (!repository) {
       return;
@@ -82,6 +87,7 @@ export function DungeonPage() {
       }
 
       setClaimError(null);
+      setBuildError(null);
       const result = claimTile(dungeon, tileId);
       if (!result.ok) {
         setClaimError(result.reason);
@@ -99,6 +105,35 @@ export function DungeonPage() {
         setClaimError(message);
       } finally {
         setClaiming(false);
+      }
+    },
+    [dungeon, repository],
+  );
+
+  const handleBuildRoom = useCallback(
+    async (tileId: string, roomType: BuildableRoomType) => {
+      if (!dungeon || !repository) {
+        return;
+      }
+
+      setBuildError(null);
+      const result = buildRoom(dungeon, tileId, roomType);
+      if (!result.ok) {
+        setBuildError(result.reason);
+        return;
+      }
+
+      setBuilding(true);
+      try {
+        await repository.saveDungeon(result.dungeon);
+        setDungeon(result.dungeon);
+        setSelectedTileId(tileId);
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Failed to save dungeon.";
+        setBuildError(message);
+      } finally {
+        setBuilding(false);
       }
     },
     [dungeon, repository],
@@ -124,6 +159,7 @@ export function DungeonPage() {
     setResetting(true);
     setLoadError(null);
     setClaimError(null);
+    setBuildError(null);
     setSelectedTileId(null);
 
     try {
@@ -137,6 +173,35 @@ export function DungeonPage() {
       setResetting(false);
     }
   }, [isDemoMode, repository]);
+
+  const handlePlaybackChange = useCallback(
+    async (update: PulsePlaybackUpdate) => {
+      if (!dungeon || !repository) {
+        return;
+      }
+
+      setPulseError(null);
+      const updated = updatePulsePlayback(dungeon, update);
+
+      try {
+        await repository.saveDungeon(updated);
+        setDungeon(updated);
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Failed to save pulse settings.";
+        setPulseError(message);
+      }
+    },
+    [dungeon, repository],
+  );
+
+  useDungeonPulse({
+    dungeon,
+    loading,
+    repository,
+    setDungeon,
+    onSaveError: setPulseError,
+  });
 
   if (session.status === "loading" || loading) {
     return <p className="status-message">Awakening the dungeon core...</p>;
@@ -170,9 +235,17 @@ export function DungeonPage() {
         <div>
           <h1>{dungeon.name}</h1>
           <p className="muted">Floor {dungeon.floor} — expand your claimed domain.</p>
+          <PulseControls
+            dungeon={dungeon}
+            onPlaybackChange={handlePlaybackChange}
+          />
         </div>
-        <ResourceBar resources={dungeon.resources} turn={dungeon.turn} />
+        <ResourceBar resources={dungeon.resources} pulseCount={dungeon.pulseCount} />
       </header>
+
+      {pulseError && (
+        <p className="status-message error pulse-save-error">{pulseError}</p>
+      )}
 
       <div className="dungeon-layout">
         <DungeonGrid
@@ -186,8 +259,11 @@ export function DungeonPage() {
             dungeon={dungeon}
             tile={selectedTile}
             onClaim={handleClaim}
+            onBuildRoom={handleBuildRoom}
             claiming={claiming}
+            building={building}
             claimError={claimError}
+            buildError={buildError}
           />
           <DungeonLog entries={dungeon.log} />
         </aside>

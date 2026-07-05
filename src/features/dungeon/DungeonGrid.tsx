@@ -1,4 +1,4 @@
-import type { DungeonState, DungeonTile } from "./dungeonTypes";
+import type { DungeonState, DungeonTile, RoomType } from "./dungeonTypes";
 
 type DungeonGridProps = {
   dungeon: DungeonState;
@@ -6,13 +6,22 @@ type DungeonGridProps = {
   onSelectTile: (tileId: string) => void;
 };
 
+const BUILT_ROOM_LABELS: Partial<Record<RoomType, string>> = {
+  manaSiphon: "M",
+  stoneQuarry: "Q",
+  mushroomFarm: "F",
+  boneShrine: "B",
+  treasureNook: "G",
+};
+
 function tileClassName(tile: DungeonTile, selected: boolean): string {
   const classes = ["grid-tile", `status-${tile.status}`];
   if (tile.roomType === "core") {
     classes.push("room-core");
-  }
-  if (tile.roomType === "entrance") {
+  } else if (tile.roomType === "entrance") {
     classes.push("room-entrance");
+  } else if (tile.roomType !== "empty") {
+    classes.push(`room-${tile.roomType}`);
   }
   if (selected) {
     classes.push("selected");
@@ -26,6 +35,10 @@ function tileLabel(tile: DungeonTile): string {
   }
   if (tile.roomType === "entrance") {
     return "E";
+  }
+  const builtLabel = BUILT_ROOM_LABELS[tile.roomType];
+  if (builtLabel) {
+    return builtLabel;
   }
   if (tile.status === "claimed") {
     return "•";

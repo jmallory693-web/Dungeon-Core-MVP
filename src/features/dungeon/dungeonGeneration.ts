@@ -11,6 +11,7 @@ import {
   type DungeonTile,
   type TileType,
 } from "./dungeonTypes";
+import { createInitialPulseFields } from "./pulseRules";
 
 const BLOCKED_TILE_COUNT = 8;
 
@@ -51,7 +52,7 @@ function createTile(
   status: DungeonTile["status"],
   roomType: DungeonTile["roomType"],
   tileType: TileType,
-  claimedAtTurn?: number,
+  claimedAtPulse?: number,
 ): DungeonTile {
   return {
     id: tileId(x, y),
@@ -61,7 +62,7 @@ function createTile(
     status,
     tileType,
     roomType,
-    claimedAtTurn,
+    claimedAtPulse,
   };
 }
 
@@ -106,7 +107,7 @@ export function createInitialDungeon(ownerUid: string): DungeonState {
     schemaVersion: SCHEMA_VERSION,
     ownerUid,
     name: "First Floor Core",
-    turn: 0,
+    ...createInitialPulseFields(now),
     floor: 1,
     width: GRID_SIZE,
     height: GRID_SIZE,

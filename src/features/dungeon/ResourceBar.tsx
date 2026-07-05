@@ -2,10 +2,10 @@ import type { DungeonState } from "./dungeonTypes";
 
 type ResourceBarProps = {
   resources: DungeonState["resources"];
-  turn: number;
+  pulseCount: number;
 };
 
-export function ResourceBar({ resources, turn }: ResourceBarProps) {
+export function ResourceBar({ resources, pulseCount }: ResourceBarProps) {
   return (
     <div className="resource-bar">
       <div className="resource-item">
@@ -17,8 +17,8 @@ export function ResourceBar({ resources, turn }: ResourceBarProps) {
         <span className="resource-value">{resources.stone}</span>
       </div>
       <div className="resource-item">
-        <span className="resource-label">Turn</span>
-        <span className="resource-value">{turn}</span>
+        <span className="resource-label">Pulse</span>
+        <span className="resource-value">{pulseCount}</span>
       </div>
     </div>
   );

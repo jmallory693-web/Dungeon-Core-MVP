@@ -55,6 +55,78 @@ button {
   margin: 0;
 }
 
+.pulse-status {
+  margin-top: 0.5rem;
+}
+
+.pulse-controls {
+  margin-top: 0.5rem;
+}
+
+.pulse-controls-note,
+.pulse-controls-status {
+  margin: 0.15rem 0 0;
+  font-size: 0.9rem;
+  color: #a89fb8;
+}
+
+.pulse-controls-status {
+  color: #b8d8ff;
+}
+
+.pulse-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.pulse-speed-buttons {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.pulse-control-button {
+  border: 1px solid #7b6aa8;
+  border-radius: 8px;
+  background: #1d1828;
+  color: #dcc8ff;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.pulse-control-button:hover {
+  border-color: #9b7bff;
+}
+
+.pulse-control-button.active {
+  background: #6b4fd4;
+  border-color: #9b7bff;
+  color: #fff;
+}
+
+.pulse-playback-toggle {
+  min-width: 4.5rem;
+}
+
+.pulse-status-note,
+.pulse-status-timer {
+  margin: 0.15rem 0 0;
+  font-size: 0.9rem;
+  color: #a89fb8;
+}
+
+.pulse-status-timer {
+  color: #b8d8ff;
+}
+
+.pulse-save-error {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  text-align: left;
+}
+
 .resource-bar {
   display: flex;
   gap: 0.75rem;
@@ -65,8 +137,8 @@ button {
   background: #1d1828;
   border: 1px solid #3a304f;
   border-radius: 8px;
-  padding: 0.5rem 0.75rem;
-  min-width: 90px;
+  padding: 0.5rem 0.65rem;
+  min-width: 72px;
 }
 
 .resource-label {
@@ -210,6 +282,95 @@ button {
 .claim-error,
 .status-message.error {
   color: #f08080;
+}
+
+.build-room-section {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid #3a304f;
+}
+
+.build-room-section h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+.build-room-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.build-room-option {
+  padding: 0.75rem;
+  background: #15111d;
+  border-radius: 8px;
+  border: 1px solid #3a304f;
+}
+
+.build-room-option-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.build-room-production {
+  color: #b8e6c8;
+  font-size: 0.85rem;
+}
+
+.build-room-cost {
+  margin: 0.35rem 0 0.5rem;
+  color: #a89fb8;
+  font-size: 0.9rem;
+}
+
+.build-button {
+  width: 100%;
+  padding: 0.55rem 0.85rem;
+  border: none;
+  border-radius: 8px;
+  background: #4f6a8a;
+  color: #fff;
+  font-weight: 600;
+}
+
+.build-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.grid-tile.room-manaSiphon {
+  background: #2d2248;
+  border-color: #9b7bff;
+  color: #dcc8ff;
+}
+
+.grid-tile.room-stoneQuarry {
+  background: #2a2820;
+  border-color: #8a7a50;
+  color: #e8d8a0;
+}
+
+.grid-tile.room-mushroomFarm {
+  background: #243028;
+  border-color: #4f8a62;
+  color: #b8e6c8;
+}
+
+.grid-tile.room-boneShrine {
+  background: #2a2430;
+  border-color: #8a6aa8;
+  color: #dcc8ff;
+}
+
+.grid-tile.room-treasureNook {
+  background: #2a2820;
+  border-color: #c9a060;
+  color: #f0c674;
 }
 
 .dungeon-log ul {
